@@ -1,0 +1,77 @@
+version: "3.9"
+
+services:
+  web:
+    build: .
+    command: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - DJANGO_SETTINGS_MODULE=settings.local
+    depends_on:
+      - redis
+      - pgdb
+
+  worker:
+    build: .
+    command: celery -A core worker --loglevel=info
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    environment:
+      - DJANGO_SETTINGS_MODULE=settings.local
+    depends_on:
+      - pgdb
+      - redis
+
+  beat:
+    build: .
+    command: celery -A core beat loglevel=info
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    environment:
+      - DJANGO_SETTINGS_MODULE=settings.local
+    depends_on:
+      - pgdb
+      - redis
+
+  flower:
+    build: .
+    command: celery -A core flower --port=5555
+    ports:
+      - "5555:5555"
+    env_file:
+      - .env
+    environment:
+      - DJANGO_SETTINGS_MODULE=settings.local
+    depends_on:
+      - redis
+      - pgdb
+
+  redis:
+    image: redis:7
+    ports:
+      - "6380:6379"
+
+  pgdb:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: TaskVerse
+      POSTGRES_USER: Mari
+      POSTGRES_PASSWORD: "@mari09033"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+
+volumes:
+  postgres_data:
+
+
