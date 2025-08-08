@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
-
+import environ 
+env = environ.Env()
+environ.Env.read_env()
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -12,10 +14,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'app',
     'django_celery_beat',
     'django_celery_results',
     'graphene_django',
+    'users.apps.UsersConfig',
+
+    
     
 ]
 
@@ -33,7 +37,42 @@ ROOT_URLCONF = 'core.urls'
 
 CELERY_RESULT_BACKEND = 'django-db'
 
+AUTH_USER_MODEL = 'users.User'
 
+
+GRAPHENE = {
+    "SCHEMA": "users.schema.schema",
+    "MIDDLEWARE": [
+        "graphql_jwt.middleware.JSONWebTokenMiddleware",
+    ],
+}
+
+AUTHENTICATION_BACKENDS = [
+    "graphql_jwt.backends.JSONWebTokenBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
+
+GRAPHQL_JWT = {
+    "JWT_VERIFY_EXPIRATION": True,
+    "JWT_LONG_RUNNING_REFRESH_TOKEN": True,
+    "JWT_ALLOW_ANY_CLASSES": [
+        "users.schema.ObtainJSONWebToken",
+        "graphql_jwt.refresh.Refresh",
+        "graphql_jwt.verify.Verify",
+    ],
+}
+
+
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": env("POSTGRES_DB"),
+        "USER": env("POSTGRES_USER"),
+        "PASSWORD": env("POSTGRES_PASSWORD"),
+        "HOST": env("DB_HOST"),
+        "PORT": env("DB_PORT"),
+    }
+}
 
 TEMPLATES = [
     {
